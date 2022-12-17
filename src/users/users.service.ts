@@ -3,6 +3,7 @@ import { User as UserModel } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'src/database/prisma.service';
 import { CreateUserDto } from './dto/create-user-dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -10,26 +11,32 @@ export class UsersService {
 
   async craeteUser({
     email,
-    name,
     password,
+    ...rest
   }: CreateUserDto): Promise<UserModel> {
     const userAlreadyExists = await this.getUser({ where: { email } });
     if (userAlreadyExists) throw new ConflictException('User already exists');
+
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
     return this.prisma.user.create({
       data: {
         email,
-        name,
+        ...rest,
         password: hashedPassword,
-        addresses: { create: [] },
       },
-      include: { addresses: true },
     });
   }
 
   async getUser(query: object): Promise<UserModel | undefined> {
     return this.prisma.user.findFirst(query);
+  }
+
+  async updateUser(id: string, updateUserDto: UpdateUserDto) {
+    await this.prisma.user.update({
+      where: { id },
+      data: { ...updateUserDto },
+    });
   }
 }

@@ -1,12 +1,14 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Request, UseGuards } from '@nestjs/common';
+import { AccessTokenGuard } from 'src/guards/access-token.guard';
 import { AddressService } from './address.service';
 
 @Controller('address')
 export class AddressController {
   constructor(private addressService: AddressService) {}
 
-  @Get(':userId')
-  async getUserAddresses(@Param('userId') userId: string) {
-    return await this.addressService.getUserAddresses(userId);
+  @UseGuards(AccessTokenGuard)
+  @Get()
+  async getUserAddresses(@Request() req) {
+    return await this.addressService.getUserAddresses(req.user.id);
   }
 }
