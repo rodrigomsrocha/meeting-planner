@@ -12,8 +12,22 @@ datasource db {
 }
 
 model User {
-  id       String @id @default(uuid())
-  name     String
-  email    String
-  password String
+  id        String    @id @default(uuid())
+  name      String
+  email     String    @unique
+  password  String
+  addresses Address[]
+}
+
+model Address {
+  id      String @id @default(uuid())
+  line    String
+  city    String
+  state   String
+  country String
+  cep     String
+  user    User   @relation(fields: [userId], references: [id])
+  userId  String
+
+  @@index([userId])
 }
