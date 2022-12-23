@@ -12,23 +12,22 @@ datasource db {
 }
 
 model User {
-  id           String    @id @default(uuid())
-  name         String
-  email        String    @unique
-  password     String
-  refreshToken String?
-  addresses    Address[]
+  id            String    @id @default(uuid())
+  name          String
+  email         String    @unique
+  password      String
+  refreshToken  String?
+  hostMeetings  Meeting[] @relation("host")
+  guestMeetings Meeting[] @relation("guests")
 }
 
-model Address {
-  id      String @id @default(uuid())
-  line    String
-  city    String
-  state   String
-  country String
-  cep     String
-  user    User   @relation(fields: [userId], references: [id])
-  userId  String
+model Meeting {
+  id          String   @id @default(uuid())
+  host        User     @relation(name: "host", fields: [userId], references: [id])
+  guests      User[]   @relation(name: "guests")
+  meetingLink String
+  startsAt    DateTime
+  userId      String
 
   @@index([userId])
 }
