@@ -32,10 +32,15 @@ export class AuthService {
   }
 
   async login({ email, password }: LoginDto) {
-    const user = await this.usersService.getUser({ where: { email } });
+    const user = await this.usersService.getUser({ email });
+
+    if (!user) {
+      throw new BadRequestException('Email or password incorrect');
+    }
+
     const passwordMatch = bcrypt.compare(password, user.password);
 
-    if (!user || !passwordMatch) {
+    if (!passwordMatch) {
       throw new BadRequestException('Email or password incorrect');
     }
 
@@ -92,7 +97,7 @@ export class AuthService {
   }
 
   async refreshTokens(userId: string, refreshToken: string) {
-    const user = await this.usersService.getUser({ where: { id: userId } });
+    const user = await this.usersService.getUser({ id: userId });
     if (!user || !user.refreshToken) {
       throw new ForbiddenException('Access denied');
     }

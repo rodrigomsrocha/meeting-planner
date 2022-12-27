@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
 import { PrismaService } from 'src/database/prisma.service';
 import { UsersService } from 'src/users/users.service';
+import { CreateMeetingDto } from './dtos/create-meeting.dto';
 
 @Injectable()
 export class MeetingsService {
@@ -10,9 +10,9 @@ export class MeetingsService {
     private userService: UsersService,
   ) {}
 
-  async createMeeting(userId: string, data: Prisma.MeetingCreateInput) {
+  async createMeeting(userId: string, data: CreateMeetingDto) {
     const userExists = await this.userService.getUser({
-      where: { id: userId },
+      id: userId,
     });
 
     if (!userExists) {
@@ -20,7 +20,53 @@ export class MeetingsService {
     }
 
     return await this.prismaService.meeting.create({
-      data,
+      data: {
+        ...data,
+        host: {
+          connect: { id: userId },
+        },
+      },
+    });
+  }
+
+  async getUserMeetings(userId: string) {
+    const userExists = await this.userService.getUser({
+      id: userId,
+    });
+
+    if (!userExists) {
+      throw new NotFoundException('User does not exist');
+    }
+
+    return await this.prismaService.meeting.findMany({
+      where: {
+        OR: [
+          {
+            userId,
+          },
+          {
+            guests: {
+              some: { id: userId },
+            },
+          },
+        ],
+      },
+    });
+  }
+
+  async inviteUser(guestId: string, meetingId: string) {
+    const guest = await this.userService.getUser({ id: guestId });
+
+    return await this.prismaService.meeting.update({
+      where: { id: meetingId },
+      data: {
+        guests: {
+          connectOrCreate: {
+            where: { id: guestId },
+            create: { ...guest },
+          },
+        },
+      },
     });
   }
 }
